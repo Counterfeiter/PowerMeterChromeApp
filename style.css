@@ -1,0 +1,42 @@
+body {
+  font-family: monospace;
+  font-size: 10pt;
+}
+
+div {
+  position: absolute;
+  padding: 0;
+  margin: 2px;
+}
+
+#device-panel {
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 40px;
+}
+
+#gauge-panel {
+  margin: 0 auto;
+  width:600px;
+  min-width: 600px;
+  text-align: center;
+}
+
+#voltmeter {
+  display: inline-block;
+  top: 45px;
+  left: 2px;
+}
+
+#currentmeter {
+  display: inline-block; 
+  top: 45px;
+  right: 2px;
+}
+
+#input-panel {
+  bottom: 2px;
+  width: 555px;
+}
+

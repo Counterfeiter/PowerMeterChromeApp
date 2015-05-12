@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="style.css">
+      <script src="highchart/jquery.min.js"></script>
+      <script src="highchart/highcharts.src.js"></script>
+      <script src="highchart/highcharts-more.js"></script>
+      <script src="highchart/modules/exporting.js"></script>
+    <script src="recv_tpm2.js"></script>
+    <script src="control-panel.js"></script>
+  </head>
+  <body>
+    <div id="device-panel">
+      <select id="device-selector"></select>
+      <button id="connect">Connect</button>
+      <button id="disconnect">Disconnect</button>
+    </div>
+    <div id="gauge-panel">
+        <div id="voltmeter" style="min-width: 310px; max-width: 400px; height: 300px"></div>
+        <div id="currentmeter" style="min-width: 310px; max-width: 400px; height: 300px"></div>
+    </div>
+    <div id="input-panel">
+      <h3>Options</h3>
+        <button id="record">Start recording</button>
+        <button id="save">Save record to file</button>
+        <br> <br><label>Input Log:</label><br>
+      <textarea id="input-log" cols="65" rows="3" readonly></textarea><br>
+    </div>
+  </body>
+</html>
