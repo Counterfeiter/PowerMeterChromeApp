@@ -66,6 +66,12 @@ function Proto_handler(callback_list)
     this.recording = false;
 
     this.storage_VC = [];
+
+    //used to filter
+    this.update_rate_csv = 1; //1 = 1000 Hz; 10 = 100Hz; 100 = 10 Hz
+    this.counter_rate_csv = 0;
+    this.voltage_mean = 0.0;
+    this.current_mean = 0.0;
 }
  
 Proto_handler.prototype.parse_tpm2 = function(buffer)
@@ -185,17 +191,39 @@ Proto_handler.prototype.recv_new_data = function (buffer)
         voltage = dataview.getUint16(i, little_endian_read) * this.scale_V;
         current = dataview.getInt16(i + 2, little_endian_read) * scale_current;
 
+
+        if (this.recording) {
+            //filter for a csv with less value pairs
+            this.voltage_mean += voltage;
+            this.current_mean += current;
+
+            this.counter_rate_csv++;
+            if (this.counter_rate_csv >= this.update_rate_csv) {
+                var volt_f = this.voltage_mean / this.counter_rate_csv;
+                var curr_f = this.current_mean / this.counter_rate_csv;
+
+                this.counter_rate_csv = 0;
+
+                var round_v_f = Math.round(volt_f * 100.0) / 100;
+                var round_i_f = Math.round(curr_f * Math.pow(10.0, this.current_rounder)) / Math.pow(10.0, this.current_rounder);
+
+                var now = new Date();
+                var now_string = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + '.' + now.getMilliseconds();
+
+                this.storage_VC.push({ time: now_string, voltage: round_v_f, current: round_i_f });
+
+                this.voltage_mean = 0.0;
+                this.current_mean = 0.0;
+            }
+        }
+
         var round_v = Math.round(voltage * 100.0) / 100;
         var round_i = Math.round(current * Math.pow(10.0, this.current_rounder)) / Math.pow(10.0, this.current_rounder);
 
         packet_counter++;
-        if (packet_counter % 1000 == 0) {
+        if (packet_counter % 100 == 0) {
             console.log("Pakete: " + packet_counter);
             this.callbacks.new_data(round_v, round_i);
-        }
-
-        if (this.recording) {
-            this.storage_VC.push({ voltage: round_v, current: round_i });
         }
 
         //console.log("V: " + voltage.toFixed(2) + " A: " + current.toFixed(this.current_rounder));
@@ -288,7 +316,11 @@ Proto_handler.prototype.recv_scale_values = function (buffer)
     //console.log("Value CH: " + this.scale_CH.toString());
 };
 
-Proto_handler.prototype.start_recording = function () {
+Proto_handler.prototype.start_recording = function (update_rate) {
+    this.counter_rate_csv = 0;
+    this.update_rate_csv = update_rate;
+    this.voltage_mean = 0.0;
+    this.current_mean = 0.0;
     this.storage_VC = [];
     this.recording = true;
 };
@@ -306,10 +338,10 @@ Proto_handler.prototype.save_recorded_to_file = function (writableEntry, callbac
         return;
     }
     
-    var filestr = 'U/V;I/A\n';
+    var filestr = 'time;U/V;I/A\n';
 
     for (var i in this.storage_VC) {
-        filestr += this.storage_VC[i].voltage + ';' + this.storage_VC[i].current + '\n';
+        filestr += this.storage_VC[i].time + ';' + this.storage_VC[i].voltage + ';' + this.storage_VC[i].current + '\n';
     }
 
     var blob = new Blob([filestr], { type: 'text/plain' });
@@ -330,12 +362,12 @@ Proto_handler.prototype.save_recorded_to_file = function (writableEntry, callbac
         };
 
         writer.onerror = function (e) {
-            console.log('Write failed: ' + e.toString());
+            console.warn('Write failed: ' + e.toString());
         };
 
         writer.write(blob);
 
     }, function (e) {
-        console.log('Write failed: ' + e.toString());
+        console.warn('Write failed: ' + e.toString());
     }).bind(this);
 };

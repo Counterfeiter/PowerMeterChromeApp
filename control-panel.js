@@ -26,11 +26,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     inputLog: null,
     record: null,
     save: null,
+    filter_select: null,
   };
 
   var connection = -1;
   var deviceMap = {};
   var pendingDeviceMap = {};
+  var parser;
 
   var initializeWindow = function() {
     for (var k in ui) {
@@ -55,39 +57,36 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     enumerateDevices();
   };
 
-  var UpdateGraph = function (scale_v, scale_c) {
-      console.log("Test... hier");
-      var curr = (4000 * scale_c);
+  var current_scale_range = 1.0;
 
-      voltage_gauge.yAxis[0].update({ max: (8000 * scale_v) });
-      current_gauge.yAxis[0].update({
-          max: +(curr),
-          min: -(curr),
-          plotBands: [{
-              from: -0.95 * curr,
-              to: 0.95 * curr,
-              color: '#55BF3B' // green
-          },
-              {
-                  from: 0.95 * curr,
-                  to: curr,
-                  color: '#DF5353' // red
-              },
-              {
-                  from: -curr,
-                  to: -0.95 * curr,
-                  color: '#DF5353' // red
-              }]
-      });
+  var UpdateGraph = function (scale_v, scale_c) {
+      displaychart(scale_v, scale_c);
+      current_scale_range = 1.0;
   };
 
+
   var UpdateData = function (voltage, current) {
+      //autoscale the current axis -> only go up!
+      var curr_pos = current > 0.0 ? current : -current;
+
+      if (curr_pos > current_gauge.yAxis[0].max && curr_pos < current_gauge.yAxis[0].max * 2.0 && current_scale_range < 2.0) {
+          displaychart(parser.scale_V, parser.scale_C * 2.0);
+          current_scale_range = 2.0;
+      } else if (curr_pos > current_gauge.yAxis[0].max && curr_pos < current_gauge.yAxis[0].max * 4.0 && current_scale_range < 4.0) {
+          displaychart(parser.scale_V, parser.scale_C * 4.0);
+          current_scale_range = 4.0;
+      } else if (curr_pos > current_gauge.yAxis[0].max && curr_pos < current_gauge.yAxis[0].max * 8.0 && current_scale_range < 8.0) {
+          displaychart(parser.scale_V, parser.scale_C * 8.0);
+          current_scale_range = 8.0;
+      }
+      //display data
       voltage_gauge.series[0].points[0].update(voltage);
       current_gauge.series[0].points[0].update(current);
   };
 
   var isReceivePending = false;
-  var parser = new Proto_handler({
+
+  parser = new Proto_handler({
       scale_values_changed: UpdateGraph,
       new_data: UpdateData
   });
@@ -95,7 +94,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   var voltage_gauge;
   var current_gauge;
 
-  var displaychart = function () {
+  var displaychart = function (scale_v, scale_c) {
+      if (scale_c === undefined)
+          scale_c = 0.00025;
+
       $("#voltmeter").highcharts({
 
             chart: {
@@ -204,6 +206,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             voltage_gauge = chart;
         });
 
+      var curr = (4000 * scale_c);
+
       $("#currentmeter").highcharts({
 
           chart: {
@@ -262,8 +266,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
           // the value axis
           yAxis: {
-              min: -1.0,
-              max: +1.0,
+              min: -curr,
+              max: +curr,
 
               minorTickInterval: 'auto',
               minorTickWidth: 0.5,
@@ -284,18 +288,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   text: 'I/A'
               },
               plotBands: [{
-                  from: -0.95,
-                  to: 0.95,
+                  from: -0.95 * curr,
+                  to: 0.95 * curr,
                   color: '#55BF3B' // green
               },
               {
-                  from: 0.95,
-                  to: 1.0,
+                  from: 0.95 * curr,
+                  to: curr,
                   color: '#DF5353' // red
               },
               {
-                  from: -1.0,
-                  to: -0.95,
+                  from: -curr,
+                  to: -0.95 * curr,
                   color: '#DF5353' // red
               }]
           },
@@ -399,8 +403,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  var onSaveClicked = function() {
       counter = 0;
 
-      var now = new Date();
+      var now_now = new Date();
+      var now = new Date(now_now.getTime() - (now_now.getTimezoneOffset() * 60000));
       var now_string = now.toUTCString().replace(/[, :]/gi, '');
+      //var now_string = now.toLocaleDateString('en-US').replace(/[, :]/gi, '');
+      //var now_string = now.getYear().toString() + now.getMonth().toString() + now.getDay().toString() + now.getHours().toString() +
+       //                 now.getMinutes().toString() + now.getSeconds().toString();
 
       var config = {
           type: 'saveFile',
@@ -413,7 +421,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       };
       chrome.fileSystem.chooseEntry(config, function (writableEntry) {
           parser.save_recorded_to_file(writableEntry, function (e) {
-              console.log('Write complete');
+              //console.log('Write complete or error');
           });
       });
  };
@@ -421,7 +429,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  var onRecordClicked = function () {
      if (ui.record.childNodes[0].nodeValue == 'Start recording') {
          ui.record.childNodes[0].nodeValue = 'Stop recording';
-         parser.start_recording();
+         parser.start_recording(parseInt(ui.filter_select.value));
          ui.save.disabled = true;
      } else {
          ui.record.childNodes[0].nodeValue = 'Start recording';
