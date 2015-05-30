@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+	<link href="tab-content/tabcontent.css" rel="stylesheet" type="text/css" />
+	<script src="tab-content/tabcontent.js" type="text/javascript"></script>
     <link rel="stylesheet" href="style.css">
       <script src="highchart/jquery.min.js"></script>
       <script src="highchart/highcharts.src.js"></script>
@@ -10,26 +12,43 @@
     <script src="control-panel.js"></script>
   </head>
   <body>
-    <div id="device-panel">
-      <select id="device-selector"></select>
-      <button id="connect">Connect</button>
-      <button id="disconnect">Disconnect</button>
-    </div>
-    <div id="gauge-panel">
-        <div id="voltmeter" style="min-width: 310px; max-width: 400px; height: 300px"></div>
-        <div id="currentmeter" style="min-width: 310px; max-width: 400px; height: 300px"></div>
-    </div>
-    <div id="input-panel">
-      <h3>Options</h3>
-        <select id="filter_select">
-            <option value=1>1000 Hz</option>
-            <option value=10>100 Hz</option>
-            <option value=100>10 Hz</option>
-        </select>
-        <button id="record">Start recording</button>
-        <button id="save">Save record to file</button>
-        <br> <br><label>Input Log:</label><br>
-      <textarea id="input-log" cols="65" rows="3" readonly></textarea><br>
-    </div>
+  <ul class="tabs">
+    <li><a href="#view1">Gauge Meter</a></li>
+    <li><a href="#view2">Line Chart</a></li>
+    <li><a href="#view3">Options</a></li>
+	</ul>
+	<div class="tabcontents">
+	    <div id="view1">
+	          <div id="whole-gauge">
+			    <div id="device-panel">
+			      <select id="device-selector"></select>
+			      <button id="connect">Connect</button>
+			      <button id="disconnect">Disconnect</button>
+			    </div>
+			    <div id="gauge-panel">
+			        <div id="voltmeter" style="min-width: 310px; max-width: 400px; height: 300px"></div>
+			        <div id="currentmeter" style="min-width: 310px; max-width: 400px; height: 300px"></div>
+			    </div>
+			    <div id="input-panel">
+			      <h3>Options</h3>
+			        <select id="filter_select">
+			            <option value=1>1000 Hz</option>
+			            <option value=10>100 Hz</option>
+			            <option value=100>10 Hz</option>
+			        </select>
+			        <button id="record">Start recording</button>
+			        <button id="save">Save record to file</button>
+			        <br> <br><label>Input Log:</label><br>
+			      <textarea id="input-log" cols="65" rows="3" readonly></textarea><br>
+			    </div>
+			    </div>
+	    </div>
+	    <div id="view2">
+	        content 2
+	    </div>
+	    <div id="view3">
+	        content 3
+	    </div>
+	</div>
   </body>
 </html>

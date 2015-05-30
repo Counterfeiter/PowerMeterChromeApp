@@ -9,6 +9,13 @@ div {
   margin: 2px;
 }
 
+#whole-gauge {
+  top: 2px;
+  left: 2px;
+  height: 500px;
+  width:600px;
+}
+
 #device-panel {
   top: 2px;
   left: 2px;
